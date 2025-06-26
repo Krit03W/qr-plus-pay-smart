@@ -180,7 +180,7 @@ const PromptPayApp = () => {
                       variant="outline"
                       className="w-full border-white text-white hover:bg-white hover:text-black py-2 rounded-xl"
                     >
-                      ย้อนกลับ
+                      กลับ
                     </Button>
                   </div>
                 </div>
