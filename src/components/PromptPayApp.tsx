@@ -1,42 +1,37 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import React, { useState } from 'react';
+import PhoneFrame from './PhoneFrame';
+import HomeScreen from './screens/HomeScreen';
+import ScannerScreen from './screens/ScannerScreen';
+import LoadingScreen from './screens/LoadingScreen';
+import PaymentScreen from './screens/PaymentScreen';
+import ConfirmationScreen from './screens/ConfirmationScreen';
 
-// Mock data for payment methods and promotions
+// Mock data for payment methods
 const mockPaymentMethods = [
   {
     id: 1,
-    name: 'KBank Credit Card',
+    name: 'Krungsri Credit Card',
     type: 'credit',
     discount: 15,
-    finalAmount: 135,
-    promotion: 'ส่วนลด 15 บาท สำหรับการซื้อเครื่องดื่ม'
+    finalAmount: 235,
+    promotion: '10% points for ฿10 off'
   },
   {
     id: 2,
     name: 'TrueMoney Wallet',
     type: 'ewallet',
-    discount: 10,
-    finalAmount: 140,
-    promotion: 'ส่วนลด 10 บาท'
+    discount: 12,
+    finalAmount: 238,
+    promotion: 'Cashback 5%'
   },
   {
     id: 3,
-    name: 'SCB Easy App',
+    name: 'PromptPay',
     type: 'banking',
-    discount: 8,
-    finalAmount: 142,
-    promotion: 'ส่วนลด 8 บาท'
-  },
-  {
-    id: 4,
-    name: 'Rabbit LINE Pay',
-    type: 'ewallet',
-    discount: 12,
-    finalAmount: 138,
-    promotion: 'ส่วนลด 12 บาท + คะแนน Rabbit'
+    discount: 0,
+    finalAmount: 250,
+    promotion: 'Pay full amount'
   }
 ];
 
@@ -45,27 +40,22 @@ const PromptPayApp = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [merchant] = useState({
-    name: 'Cafe Amazon',
-    originalAmount: 150.00
+    name: 'Starbucks',
+    originalAmount: 250.00
   });
-
-  // Find the best deal (lowest final amount)
-  const bestDeal = mockPaymentMethods.reduce((best, current) => 
-    current.finalAmount < best.finalAmount ? current : best
-  );
 
   const handleScanQR = () => {
     setCurrentScreen('scanner');
   };
 
   const handleSimulateScan = () => {
-    setCurrentScreen('recommendation');
+    setCurrentScreen('loading');
     setIsLoading(true);
     
-    // Simulate loading time
     setTimeout(() => {
       setIsLoading(false);
-    }, 2000);
+      setCurrentScreen('payment');
+    }, 3000);
   };
 
   const handleConfirmPayment = (paymentMethod) => {
@@ -78,259 +68,66 @@ const PromptPayApp = () => {
     setSelectedPayment(null);
   };
 
-  const getPaymentIcon = (type) => {
-    switch (type) {
-      case 'credit': return '💳';
-      case 'ewallet': return '📱';
-      case 'banking': return '🏦';
-      default: return '💰';
+  const handleBack = () => {
+    if (currentScreen === 'scanner') {
+      setCurrentScreen('home');
+    } else if (currentScreen === 'loading' || currentScreen === 'payment') {
+      setCurrentScreen('scanner');
+    }
+  };
+
+  const renderScreen = () => {
+    switch (currentScreen) {
+      case 'home':
+        return <HomeScreen onScanQR={handleScanQR} />;
+      
+      case 'scanner':
+        return (
+          <ScannerScreen 
+            onBack={handleBack}
+            onSimulateScan={handleSimulateScan}
+          />
+        );
+      
+      case 'loading':
+        return (
+          <LoadingScreen 
+            onBack={handleBack}
+            merchant={merchant.name}
+            amount={merchant.originalAmount}
+          />
+        );
+      
+      case 'payment':
+        return (
+          <PaymentScreen 
+            onBack={handleBack}
+            onConfirmPayment={handleConfirmPayment}
+            merchant={merchant.name}
+            originalAmount={merchant.originalAmount}
+            paymentMethods={mockPaymentMethods}
+          />
+        );
+      
+      case 'confirmation':
+        return (
+          <ConfirmationScreen 
+            onReturnHome={handleReturnHome}
+            merchant={merchant.name}
+            selectedPayment={selectedPayment}
+          />
+        );
+      
+      default:
+        return <HomeScreen onScanQR={handleScanQR} />;
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-4">
-      {/* Smartphone Frame */}
-      <div className="relative">
-        {/* Phone Frame */}
-        <div className="w-80 h-[700px] bg-black rounded-[3rem] p-2 shadow-2xl">
-          {/* Screen */}
-          <div className="w-full h-full bg-white rounded-[2.5rem] overflow-hidden relative">
-            {/* Notch */}
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-32 h-6 bg-black rounded-b-2xl z-10"></div>
-            
-            {/* App Content */}
-            <div className="h-full overflow-y-auto">
-              {/* Home Screen */}
-              {currentScreen === 'home' && (
-                <div className="min-h-full bg-gradient-to-br from-blue-50 to-blue-100 p-4 pt-8">
-                  <div className="text-center mb-8 pt-4">
-                    <h1 className="text-3xl font-bold text-blue-900 mb-2">PromptPay Plus+</h1>
-                    <p className="text-blue-600">ระบบจ่ายเงินอัจฉริยะ</p>
-                  </div>
-                  
-                  <Card className="mb-6 border-0 shadow-lg">
-                    <CardContent className="p-6">
-                      <div className="text-center">
-                        <div className="text-5xl mb-4">📱</div>
-                        <h2 className="text-lg font-semibold text-blue-900 mb-2">
-                          สแกน QR เพื่อจ่ายเงิน
-                        </h2>
-                        <p className="text-blue-600 mb-6 text-sm">
-                          ระบบจะแนะนำวิธีการชำระเงินที่คุ้มค่าที่สุดให้คุณ
-                        </p>
-                        <Button 
-                          onClick={handleScanQR}
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-base font-semibold rounded-xl"
-                        >
-                          📱 เริ่มสแกน QR Code
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <Card className="border-0 shadow-md">
-                      <CardContent className="p-3 text-center">
-                        <div className="text-xl mb-2">💸</div>
-                        <p className="text-xs text-blue-600">ประหยัดได้</p>
-                        <p className="font-semibold text-blue-900 text-sm">ถึง 50%</p>
-                      </CardContent>
-                    </Card>
-                    <Card className="border-0 shadow-md">
-                      <CardContent className="p-3 text-center">
-                        <div className="text-xl mb-2">⚡</div>
-                        <p className="text-xs text-blue-600">จ่ายเงิน</p>
-                        <p className="font-semibold text-blue-900 text-sm">ภายใน 3 วิ</p>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-              )}
-
-              {/* Scanner Screen */}
-              {currentScreen === 'scanner' && (
-                <div className="min-h-full bg-black relative">
-                  <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center">
-                    <div className="relative">
-                      {/* Viewfinder */}
-                      <div className="w-48 h-48 border-4 border-white border-dashed rounded-lg flex items-center justify-center">
-                        <div className="text-white text-center">
-                          <div className="text-3xl mb-2">📱</div>
-                          <p className="text-xs">วางกล้องให้ตรงกับ QR Code</p>
-                        </div>
-                      </div>
-                      
-                      {/* Corner brackets */}
-                      <div className="absolute top-0 left-0 w-6 h-6 border-l-4 border-t-4 border-blue-400"></div>
-                      <div className="absolute top-0 right-0 w-6 h-6 border-r-4 border-t-4 border-blue-400"></div>
-                      <div className="absolute bottom-0 left-0 w-6 h-6 border-l-4 border-b-4 border-blue-400"></div>
-                      <div className="absolute bottom-0 right-0 w-6 h-6 border-r-4 border-b-4 border-blue-400"></div>
-                    </div>
-                  </div>
-                  
-                  <div className="absolute bottom-8 left-4 right-4">
-                    <Button 
-                      onClick={handleSimulateScan}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-base font-semibold rounded-xl mb-4"
-                    >
-                      จำลองการสแกนร้านกาแฟ ☕
-                    </Button>
-                    <Button 
-                      onClick={handleReturnHome}
-                      variant="outline"
-                      className="w-full border-white text-white hover:bg-white hover:text-black py-2 rounded-xl"
-                    >
-                      กลับ
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Recommendation Screen */}
-              {currentScreen === 'recommendation' && (
-                <div className="min-h-full bg-gradient-to-br from-blue-50 to-blue-100 p-4 pt-8">
-                  <div className="text-center mb-4">
-                    <Button 
-                      onClick={handleReturnHome}
-                      variant="ghost"
-                      className="absolute top-8 left-4 text-blue-600 text-sm"
-                    >
-                      ← กลับ
-                    </Button>
-                    <h1 className="text-xl font-bold text-blue-900 pt-2">แนะนำการชำระเงิน</h1>
-                  </div>
-
-                  {isLoading ? (
-                    <div className="text-center py-12">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                      <p className="text-blue-600 text-base">กำลังค้นหาโปรโมชันที่ดีที่สุด...</p>
-                    </div>
-                  ) : (
-                    <>
-                      <Card className="mb-4 border-0 shadow-lg">
-                        <CardContent className="p-4">
-                          <div className="text-center">
-                            <div className="text-3xl mb-2">☕</div>
-                            <h2 className="text-lg font-semibold text-blue-900 mb-1">{merchant.name}</h2>
-                            <p className="text-blue-600 mb-2 text-sm">ยอดชำระ: {merchant.originalAmount.toFixed(2)} บาท</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <div className="space-y-2 mb-4">
-                        {mockPaymentMethods.map((method) => (
-                          <Card 
-                            key={method.id} 
-                            className={`border-0 shadow-md transition-all duration-200 ${
-                              method.id === bestDeal.id 
-                                ? 'bg-green-50 border-2 border-green-400 shadow-lg' 
-                                : 'hover:shadow-lg'
-                            }`}
-                          >
-                            <CardContent className="p-3">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-2">
-                                  <div className="text-lg">{getPaymentIcon(method.type)}</div>
-                                  <div>
-                                    <div className="flex items-center space-x-1">
-                                      <h3 className="font-semibold text-blue-900 text-sm">{method.name}</h3>
-                                      {method.id === bestDeal.id && (
-                                        <Badge className="bg-green-500 text-white text-xs">
-                                          คุ้มที่สุด!
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <p className="text-xs text-blue-600">{method.promotion}</p>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <p className="text-xs text-gray-500 line-through">
-                                    {merchant.originalAmount.toFixed(2)}
-                                  </p>
-                                  <p className="text-sm font-bold text-green-600">
-                                    {method.finalAmount.toFixed(2)} บาท
-                                  </p>
-                                  <p className="text-xs text-green-600">
-                                    ประหยัด {method.discount} บาท
-                                  </p>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-
-                      <Button 
-                        onClick={() => handleConfirmPayment(bestDeal)}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-base font-semibold rounded-xl"
-                      >
-                        ยืนยันการจ่ายเงิน {bestDeal.finalAmount.toFixed(2)} บาท
-                      </Button>
-                    </>
-                  )}
-                </div>
-              )}
-
-              {/* Confirmation Screen */}
-              {currentScreen === 'confirmation' && (
-                <div className="min-h-full bg-gradient-to-br from-green-50 to-blue-50 p-4 pt-8">
-                  <div className="text-center py-8">
-                    <div className="text-6xl mb-4">✅</div>
-                    <h1 className="text-2xl font-bold text-green-600 mb-2">ชำระเงินสำเร็จ!</h1>
-                    <p className="text-blue-600 mb-6">การทำรายการเสร็จสิ้น</p>
-                    
-                    <Card className="mb-6 border-0 shadow-lg">
-                      <CardContent className="p-4">
-                        <div className="space-y-3 text-sm">
-                          <div className="border-b pb-2">
-                            <p className="text-xs text-blue-600">ร้านค้า</p>
-                            <p className="font-semibold text-blue-900">{merchant.name}</p>
-                          </div>
-                          <div className="border-b pb-2">
-                            <p className="text-xs text-blue-600">จำนวนเงิน</p>
-                            <p className="font-semibold text-blue-900">
-                              {selectedPayment?.finalAmount.toFixed(2)} บาท
-                            </p>
-                            <p className="text-xs text-green-600">
-                              (ประหยัด {selectedPayment?.discount} บาท)
-                            </p>
-                          </div>
-                          <div className="border-b pb-2">
-                            <p className="text-xs text-blue-600">วิธีการชำระเงิน</p>
-                            <div className="flex items-center space-x-2">
-                              <span className="text-base">{getPaymentIcon(selectedPayment?.type)}</span>
-                              <p className="font-semibold text-blue-900">{selectedPayment?.name}</p>
-                            </div>
-                          </div>
-                          <div>
-                            <p className="text-xs text-blue-600">เวลา</p>
-                            <p className="font-semibold text-blue-900">
-                              {new Date().toLocaleString('th-TH')}
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Button 
-                      onClick={handleReturnHome}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-base font-semibold rounded-xl"
-                    >
-                      เสร็จสิ้น
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Phone frame highlights */}
-        <div className="absolute top-8 right-1 w-1 h-12 bg-gray-800 rounded-full"></div>
-        <div className="absolute top-20 right-1 w-1 h-8 bg-gray-800 rounded-full"></div>
-        <div className="absolute top-32 right-1 w-1 h-8 bg-gray-800 rounded-full"></div>
-        <div className="absolute top-16 left-1 w-1 h-16 bg-gray-800 rounded-full"></div>
-      </div>
+      <PhoneFrame>
+        {renderScreen()}
+      </PhoneFrame>
     </div>
   );
 };
